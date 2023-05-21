@@ -1,10 +1,16 @@
 from rest_framework import status
+from rest_framework.views import APIView
 from rest_framework.response import Response
-from rest_framework.decorators import api_view
+from rest_framework.decorators import api_view, authentication_classes, permission_classes
+from rest_framework.permissions import IsAuthenticated
 from django.core.exceptions import ValidationError
-from base.models import Article, ArticleCategory
-from .serializers import ArticleSerializer, ArticleCategorySerializer
+from base.models import User, Article, ArticleCategory
+from .serializers import ArticleSerializer
+from django.conf import settings
+from django.db import IntegrityError
 
+import jwt
+from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from rest_framework_simplejwt.views import TokenObtainPairView
 
@@ -29,36 +35,81 @@ class MyTokenObtainPairView(TokenObtainPairView):
 def getRoutes(request):
     routes = [
         '/api/token',
-        '/api/token/refresh'
+        '/api/token/refresh',
+        '/api/articles',
+        '/api/add-article',
     ]
 
     return Response(routes)
 
-@api_view(['GET']) # arguments are allowed methods
-def getArticles(request):
-    articles = Article.objects.all()
-    serializer = ArticleSerializer(articles, many=True) # many=True to serialize multiple items
+# view to check user access token validity
+@api_view(['POST'])
+@authentication_classes([JWTAuthentication])
+def checkToken(request):
+    token = request.data['access_token']
+    if not token:
+        return Response({
+            "error": "No token provided"
+        }, status=400)
+
+    try:
+        payload = jwt.decode(token, settings.SECRET_KEY, algorithms=["HS256"])
+    except jwt.ExpiredSignatureError:
+        return Response({"error": "Token has expired"}, status=401)
+    except jwt.DecodeError:
+        return Response({"error": "Invalid token"}, status=401)
+
+    return Response({
+        "user_id": payload["user_id"],
+        "username": payload["username"],
+    }, status=200)
+
+
+# register new user
+@api_view(['POST'])
+def registerUser(request):
+    if request.user.is_authenticated:
+        # if user is already logged in, return error
+        return Response({"error": "Please logout to create a new account."}, status=status.HTTP_400_BAD_REQUEST)
     
+    else:
+        username = request.data['username']
+        email = request.data['email']
+        password = request.data['password']
+
+        try:
+            user = User.objects.create_user(username, email, password)
+            user.save()
+
+            return Response({"success": "Account successfully created."}, status=200)
+        except IntegrityError:
+            return Response({"error": "Account already exists."}, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['GET']) # arguments are allowed methods
+@permission_classes([IsAuthenticated]) # permission level required
+def getArticles(request):
+    articles = Article.objects.filter(author=request.user)
+    serializer = ArticleSerializer(articles, many=True) # many=True to serialize multiple items
+
+
     return Response(serializer.data)
 
-@api_view(['GET'])
-def getArticleCategories(request):
-    article_categories = ArticleCategory.objects.all()
-    serializer = ArticleCategorySerializer(article_categories, many=True)
-
-    return Response(serializer.data)
 
 @api_view(['POST'])
+@permission_classes([IsAuthenticated])
 def addArticle(request):
     category_name = request.data['category']
 
     # check if article category exists, if not return error
-    category = ArticleCategory.objects.get(name=category_name)
+    category = ArticleCategory.objects.get(name=category_name).pk
+
     if category is not None:
         serializer = ArticleSerializer(
             data = {
                 "title": request.data["title"],
-                "category": category.pk,
+                "category": category,
+                "author": request.user.id,
                 "content": request.data["content"],
             }
         )
@@ -73,11 +124,3 @@ def addArticle(request):
     else:
         return Response("There was an error", status=status.HTTP_400_BAD_REQUEST)
 
-# @api_view(['POST'])
-# def addPost(request):
-#     category_name = request.data.get('category')
-#     category = Category.objects.get(name=category_name)
-#     serializer = PostSerializer(data=request.data)
-#     serializer.is_valid(raise_exception=True)
-#     serializer.save(category=category)
-#     return Response(serializer.data)

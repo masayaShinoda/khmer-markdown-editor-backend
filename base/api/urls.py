@@ -10,8 +10,8 @@ urlpatterns = [
     path('', views.getRoutes),
     path('token/', MyTokenObtainPairView.as_view(), name='token_obtain_pair'), # custom token pair view
     path('token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
-    path('articles', views.getArticles),
-    path('categories', views.getArticleCategories),
+    path('check-token/', views.checkToken),
+    path('register/', views.registerUser),
+    path('articles/', views.getArticles),
     path('add-article/', views.addArticle),
-    # path('add-category/', views.addArticleCategory)
 ]
