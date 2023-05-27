@@ -37,7 +37,6 @@ def getRoutes(request):
         '/api/token',
         '/api/token/refresh',
         '/api/articles',
-        '/api/add-article',
     ]
 
     return Response(routes)
@@ -88,39 +87,49 @@ def registerUser(request):
 
 @api_view(['GET']) # arguments are allowed methods
 @permission_classes([IsAuthenticated]) # permission level required
-def getArticles(request):
-    articles = Article.objects.filter(author=request.user)
-    serializer = ArticleSerializer(articles, many=True) # many=True to serialize multiple items
+def articles(request):
+    if request.method == "GET":
+        articles = Article.objects.filter(author=request.user)
+        serializer = ArticleSerializer(articles, many=True) # many=True to serialize multiple items
+
+        return Response(serializer.data)
 
 
-    return Response(serializer.data)
-
-
-@api_view(['POST'])
-@permission_classes([IsAuthenticated])
-def addArticle(request):
-    category_name = request.data['category']
-
-    # check if article category exists, if not return error
-    category = ArticleCategory.objects.get(name=category_name).pk
-
-    if category is not None:
-        serializer = ArticleSerializer(
-            data = {
-                "title": request.data["title"],
-                "category": category,
-                "author": request.user.id,
-                "content": request.data["content"],
-            }
-        )
-
-        if not serializer.is_valid(raise_exception=True):
-            raise ValidationError(serializer.errors)
+@api_view(['GET', 'POST', 'PUT', 'DELETE']) # arguments are allowed methods
+@permission_classes([IsAuthenticated]) # permission level required
+def article(request, slug):
+    if request.method == "GET":
+        try:
+            article = Article.objects.filter(author=request.user).get(slug=slug)
+            serializer = ArticleSerializer(article)
+            return Response(serializer.data)
         
-        serializer.save()
+        except Exception as exception:
+            return Response({"error": exception})
+        
+    if request.method == "POST":
+        category_name = request.data['category']
 
-        return Response(f"""New article submitted:\n{serializer.data}""")
+        # check if article category exists, if not return error
+        category = ArticleCategory.objects.get(name=category_name).pk
 
-    else:
-        return Response("There was an error", status=status.HTTP_400_BAD_REQUEST)
+        if category is not None:
+            serializer = ArticleSerializer(
+                data = {
+                    "title": request.data["title"],
+                    "category": category,
+                    "author": request.user.id,
+                    "content": request.data["content"],
+                }
+            )
 
+            if not serializer.is_valid(raise_exception=True):
+                raise ValidationError(serializer.errors)
+            
+            serializer.save()
+
+            return Response(f"""New article submitted:\n{serializer.data}""")
+
+        else:
+            return Response("There was an error handling the request.", status=status.HTTP_400_BAD_REQUEST)
+        

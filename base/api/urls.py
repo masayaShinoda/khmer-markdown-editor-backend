@@ -12,6 +12,6 @@ urlpatterns = [
     path('token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
     path('check-token/', views.checkToken),
     path('register/', views.registerUser),
-    path('articles/', views.getArticles),
-    path('add-article/', views.addArticle),
+    path('articles/', views.articles),
+    path('article/<slug:slug>/', views.article),
 ]
