@@ -34,9 +34,10 @@ class MyTokenObtainPairView(TokenObtainPairView):
 @api_view(['GET'])
 def getRoutes(request):
     routes = [
-        '/api/token',
-        '/api/token/refresh',
-        '/api/articles',
+        '/api/token/',
+        '/api/token/refresh/',
+        '/api/articles/',
+        '/api/article/',
     ]
 
     return Response(routes)
@@ -110,26 +111,28 @@ def article(request, slug):
     if request.method == "POST":
         category_name = request.data['category']
 
-        # check if article category exists, if not return error
-        category = ArticleCategory.objects.get(name=category_name).pk
+        # check if article category already exists
+        category = None
+        if len(category_name) > 0:
+            category, created = ArticleCategory.objects.get_or_create(name=category_name)
 
-        if category is not None:
-            serializer = ArticleSerializer(
-                data = {
-                    "title": request.data["title"],
-                    "category": category,
-                    "author": request.user.id,
-                    "content": request.data["content"],
-                }
-            )
+        serializer = ArticleSerializer(
+            data = {
+                "title": request.data["title"],
+                "category": category.pk if category else None,
+                "author": request.user.id,
+                "content": request.data["content"],
+                "slug": slug,
+            }
+        )
 
-            if not serializer.is_valid(raise_exception=True):
-                raise ValidationError(serializer.errors)
-            
-            serializer.save()
+        if not serializer.is_valid(raise_exception=True):
+            raise ValidationError(serializer.errors)
+        
+        serializer.save()
 
-            return Response(f"""New article submitted:\n{serializer.data}""")
+        return Response(f"""New article submitted:\n{serializer.data}""")
 
-        else:
-            return Response("There was an error handling the request.", status=status.HTTP_400_BAD_REQUEST)
+        # else:
+        #     return Response("There was an error handling the request.", status=status.HTTP_400_BAD_REQUEST)
         
