@@ -1,7 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import User
 import markdown
-from django.template.defaultfilters import slugify
+# from django.template.defaultfilters import slugify
 
 
 class ArticleCategory(models.Model):
@@ -17,7 +17,7 @@ class Article(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     category = models.ForeignKey(ArticleCategory, on_delete=models.CASCADE, blank=True, null=True)
-    slug = models.SlugField(max_length=64, default="", unique=True)
+    slug = models.CharField(max_length=255, default="", unique=True)
 
     def __str__(self):
         return self.title

@@ -12,6 +12,8 @@ urlpatterns = [
     path('token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
     path('check-token/', views.checkToken),
     path('register/', views.registerUser),
-    path('articles/', views.articles),
-    path('article/<slug:slug>/', views.article),
+    path('articles/', views.articles),  
+    path('article/', views.article),
+    path('article/<int:id>/', views.article),
+    path('article/slug/<str:slug>/', views.articleBySlug), # return article matching slug
 ]
