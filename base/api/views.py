@@ -36,8 +36,12 @@ def getRoutes(request):
     routes = [
         '/api/token/',
         '/api/token/refresh/',
+        '/api/check-token/',
+        '/api/register/',
         '/api/articles/',
         '/api/article/',
+        '/api/article/<int:id>/',
+        '/api/article/slug/<str:slug>/',
     ]
 
     return Response(routes)
@@ -171,8 +175,8 @@ def article(request, id=None): # id defaults to None to allow creation of new ar
 
     if request.method == "DELETE":
         try:
-            article = Article.objects.filter(author=request.user).get(pk=id).delete()
-            return Response("Article deleted")
+            Article.objects.filter(author=request.user).get(pk=id).delete()
+            return Response({"success": "Article deleted"})
         except Exception as exception:
             return Response({"error": exception})
         
