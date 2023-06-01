@@ -120,8 +120,12 @@ SIMPLE_JWT = {
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': 'django.db.backends.postgresql_psycopg2',
+        'NAME': 'postgres',
+        'USER': 'masaya',
+        'PASSWORD': '0243100ecb',
+        'HOST': 'khmer-markdown-editor-db-2.cad6ljyi8g7d.ap-southeast-1.rds.amazonaws.com',
+        'PORT': '5432',
     }
 }
 
