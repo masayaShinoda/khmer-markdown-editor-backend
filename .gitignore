@@ -1,2 +1,11 @@
-*.sqlite3
+# Ignore vscode folder
 .vscode/
+# Ignore virtual environment files
+venv/
+# Ignore database file
+*.sqlite3
+# Ignore compiled Python files
+*.pyc
+# Ignore build artifacts
+*.jar
+*.war
