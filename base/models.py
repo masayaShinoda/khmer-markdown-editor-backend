@@ -1,6 +1,5 @@
 from django.db import models
 from django.contrib.auth.models import User
-import markdown
 # from django.template.defaultfilters import slugify
 
 
@@ -21,6 +20,3 @@ class Article(models.Model):
 
     def __str__(self):
         return self.title
-
-    def formatted_markdown(self):
-        return markdown.markdown(self.content)
